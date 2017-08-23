@@ -4,6 +4,19 @@
              xmlns:local="clr-namespace:HyperSpectralWPF"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Selen.Wpf.Core;component/MetroWindowResources.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.Tooltip.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.Buttons.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Selen.Wpf.Core;component/Resources.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/Selen.Wpf.SystemStyles;component/Styles.xaml"/>
+                <!--
+                    Styles that define look and feel of Kinect controls
+                -->
+                <ResourceDictionary Source="KinectRegionStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

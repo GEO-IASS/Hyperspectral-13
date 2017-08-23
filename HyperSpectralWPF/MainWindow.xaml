@@ -1,12 +1,224 @@
-﻿<Window x:Class="HyperSpectralWPF.MainWindow"
+﻿<Controls:MetroWindow x:Class="HyperSpectralWPF.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:k="clr-namespace:Microsoft.Kinect.Wpf.Controls;assembly=Microsoft.Kinect.Wpf.Controls"
+        xmlns:ed="http://schemas.microsoft.com/expression/2010/drawing" 
+        xmlns:System="clr-namespace:System;assembly=mscorlib"
         xmlns:local="clr-namespace:HyperSpectralWPF"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
-    </Grid>
-</Window>
+        Title="HyperSpectral" Height="1080" Width="1920"
+        WindowState="Maximized" ResizeMode="NoResize" ShowMaxRestoreButton="False"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded"
+        TitleForeground="#999988"
+        KeyDown="Window_KeyDown"
+        Closing="Window_Closing">
+    <Controls:MetroWindow.Resources>
+        <Storyboard x:Key="BorderAnimation">
+            <DoubleAnimation To="200" Duration="0:0:10" RepeatBehavior="Forever" By="2" 
+                     Storyboard.TargetProperty="StrokeDashOffset" Storyboard.TargetName="Border"/>
+        </Storyboard>
+        <Style TargetType="Image">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Controls:MetroWindow.Resources>
+    <k:KinectRegion x:Name="kinectRegion">
+        <Grid Background="#FF1D1D1D" Name="LayoutRoot">
+            <!--Content-->
+            <DockPanel Background="Transparent" LastChildFill="True" >
+                <!--File Menu-->
+                <Menu DockPanel.Dock="Top">
+                    <MenuItem Header="File" Margin="2,0,0,0">
+                        <MenuItem Header="Open" Click="OpenButton_Click"/>
+                        <MenuItem Header="Save Image As..." Click="SaveImageAsButton_Click"/>
+                        <MenuItem Header="Preferences" Click="PreferencesButton_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Exit" Click="ExitButton_Click"/>
+                    </MenuItem>
+                </Menu>
+                
+                <!--Toolbar-->
+                <ToolBarTray DockPanel.Dock="Top" Background="#2D2D30">
+                    <ToolBar ToolBarTray.IsLocked="True" Loaded="ToolBar_Loaded" Background="#2D2D30">
+                        <Button ToolTip="Open File (Ctrl+O)" Width="25" Height="25" Margin="2,0,0,0" Click="OpenButton_Click">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/open.png"/>
+                        </Button>
+                        <ToggleButton ToolTip="Select pixels" Name="SelectModeSwitch" Width="25" Height="25" Margin="4,0,0,0" IsEnabled="False" Checked="SelectPixelModeSwitch_Checked" Unchecked="SelectPixelModeSwitch_Unchecked">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/select.png"/>
+                        </ToggleButton>
+                        <ToggleButton ToolTip="Select area" Name="SelectAreaModeSwitch" Width="25" Height="25" Margin="4,0,0,0" IsEnabled="False" Checked="SelectAreaModeSwitch_Checked" Unchecked="SelectAreaModeSwitch_Unchecked">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/select_area.png"/>
+                        </ToggleButton>
+                        <Button ToolTip="Apply a blur effect to the current image" Margin="4,0,0,0" Width="25" Height="25" Click="BlurButton_Click" IsEnabled="False" Name="BlurButton">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/blur.png"/>
+                        </Button>
+                        <Button ToolTip="Apply a blur effect to the current image" Margin="4,0,0,0" Width="25" Height="25" Click="HighlightButton_Click" IsEnabled="False" Name="HighlightButton">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/highlight.png"/>
+                        </Button>
+                        <Button ToolTip="Graph the select pixel(s)" Margin="4,0,0,0" Width="25" Height="25" Click="GraphButton_Click" IsEnabled="False" Name="GraphButton">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/graph.png"/>
+                        </Button>
+                        <ToggleButton ToolTip="Enable/disable gesture recognition" Margin="4,0,0,0" Name="GestureModeSwitch" Width="25" Height="25" IsEnabled="False" Checked="GestureModeSwitch_Checked" Unchecked="GestureModeSwitch_Unchecked">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="Resources/kinect.png"/>
+                        </ToggleButton>
+                        <ToggleButton ToolTip="Enable/disable voice recognition" Margin="4,0,0,0" Name="VoiceModeSwitch" Width="25" Height="25" IsEnabled="False" Checked="VoiceModeSwitch_Checked" Unchecked="VoiceModeSwitch_Unchecked">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Source="Resources/voice.png"/>
+                        </ToggleButton>
+                        <Button ToolTip="Save Image As... (Ctrl+S)" Width="25" Height="25" Margin="4,0,0,0" Click="SaveImageAsButton_Click" IsEnabled="False" Name="SaveImageAsBtn">
+                            <Image VerticalAlignment="Center" HorizontalAlignment="Center" Margin="1" Source="Resources/save.png"/>
+                        </Button>
+                    </ToolBar>
+                </ToolBarTray>
+
+                <!--Main content-->
+                <Border BorderBrush="#3F3F46" BorderThickness="1">
+                    <DockPanel DockPanel.Dock="Bottom" Name="MainContent" Visibility="Hidden">
+                        <!--File attributes-->
+                        <DockPanel DockPanel.Dock="Top" Height="120">
+                            <!--Left side-->
+                            <StackPanel HorizontalAlignment="Left">
+                                <TextBlock Foreground="LightGray" Margin="10 10 0 0" FontSize="12" Name="FileTextBlock">Filename:</TextBlock>
+                                <TextBlock Foreground="LightGray" Margin="10 10 0 0" FontSize="12" Name="WidthTextBlock">Width:</TextBlock>
+                                <TextBlock Foreground="LightGray" Margin="10 10 0 0" FontSize="12" Name="HeightTextBlock">Height:</TextBlock>
+                                <TextBlock Foreground="LightGray" Margin="10 10 0 0" FontSize="12" Name="GestureTextBlock">Last Gesture: N/A</TextBlock>
+                            </StackPanel>
+                            
+                            <!--Right side-->
+                            <StackPanel HorizontalAlignment="Right">
+                                <DockPanel HorizontalAlignment="Right">
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="WavelengthTextBlock">Wavelength:</TextBlock>
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="LambdaTextBlock"></TextBlock>
+                                    <TextBlock Foreground="LightGray" Margin="2 10 10 0" FontSize="12" Name="NMTextBlock">nm</TextBlock>
+                                </DockPanel>
+                                <DockPanel HorizontalAlignment="Right">
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="IndexLabelTextBlock">Index:</TextBlock>
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="IndexValueTextBlock"></TextBlock>
+                                </DockPanel>
+                                <DockPanel HorizontalAlignment="Right">
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="LHSLabel">Left hand state:</TextBlock>
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="LHSValue"></TextBlock>
+                                </DockPanel>
+                                <DockPanel HorizontalAlignment="Right">
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="RHSLabel">Right hand state:</TextBlock>
+                                    <TextBlock Foreground="LightGray" Margin="5 10 10 0" FontSize="12" Name="RHSValue"></TextBlock>
+                                </DockPanel>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <StackPanel>
+                            <!--Image viewer-->
+                            <DockPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <!--Frozen image-->
+                                <Border BorderBrush="LightGreen" BorderThickness="2" Name="FrozenArea">
+                                    <Image DockPanel.Dock="Left" Visibility="Hidden" RenderTransformOrigin="0.5,0.5" x:Name="FrozenImage1"/>
+                                </Border>
+
+                                <!--Normal image-->
+                                <Image MouseDown="Viewer_MouseDown" MouseUp="Viewer_MouseUp" MouseMove="Viewer_MouseMove"
+                                        DockPanel.Dock="Right" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5"
+                                        HorizontalAlignment="Center" Margin="15 0 0 10" x:Name="ImageViewer" Width="500" Height="500"/>
+                            </DockPanel>
+
+                            <!--Slider-->
+                            <DockPanel Width="800">
+                                <Slider DockPanel.Dock="Top" Name="ImageSlider" Margin="0 40 0 0" TickPlacement="BottomRight" IsSnapToTickEnabled="True" Orientation="Horizontal" 
+                                        Minimum="0" Maximum="77" Height="25" Width="800" TickFrequency="1" Value="0" ValueChanged="Slider_ValueChanged"/>
+                                <TextBlock Foreground="White" HorizontalAlignment="Left">528</TextBlock>
+                                <TextBlock Foreground="White" HorizontalAlignment="Right">836</TextBlock>
+                            </DockPanel>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </DockPanel>
+
+            <!--Canvas for drawing selected pixel/area onto app-->
+            <Canvas Name="MyCanvas">
+                <!--Selected pixel indicator-->
+                <Rectangle Visibility="Hidden" Name="PixelIndicator" Fill="Red" Width="4" Height="4">
+                    <Rectangle.Resources>
+                        <Style x:Key="{x:Type ToolTip}" TargetType="ToolTip">
+                            <Setter Property="OverridesDefaultStyle" Value="true" />
+                            <Setter Property="HasDropShadow" Value="True" />
+                            <Setter Property="Placement" Value="Top"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToolTip">
+                                        <ed:Callout Name="Border"
+                                            Width="{TemplateBinding Width}"
+                                            Height="{TemplateBinding Height}"
+                                            MinWidth="100"
+                                            MinHeight="30"
+                                            Margin="0, 0, 0, 10"
+                                            AnchorPoint="0,0"
+                                            Background="Black"
+                                            BorderBrush="Black"
+                                            BorderThickness="1"
+                                            CalloutStyle="RoundedRectangle"
+                                            Fill="#FFF4F4F5"
+                                            FontSize="13"
+                                            Stroke="Black"
+                                            Opacity="0.95"
+                                            Foreground="Black">
+                                            <ContentPresenter Margin="4"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Top" />
+                                        </ed:Callout>
+
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Rectangle.Resources>
+                </Rectangle>
+                
+                <!--Selection box-->
+                <Rectangle
+                    x:Name="selectionBox"
+                    Visibility="Collapsed"
+                    Fill="DodgerBlue"
+                    Opacity=".2"
+                    Stroke="GhostWhite"
+                    StrokeThickness="1"
+                    StrokeDashArray="4 4"
+                    SnapsToDevicePixels="True"/>
+            </Canvas>
+            
+            <!--Loading  bar-->
+            <Border Visibility="Hidden" Name="LoadingBar" Width="300" Height="100">
+                <Grid Background="#FF1D1D1D">
+                    <ProgressBar Minimum="0" Maximum="100" VerticalAlignment="Center" HorizontalAlignment="Center" Name="MyProgressBar" Width="200" Height="15" Visibility="Visible"/>
+                    <TextBlock Text="{Binding ElementName=MyProgressBar, Path=Value, StringFormat={}{0:0}%}" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black"/>
+                    <TextBlock VerticalAlignment="Bottom" Name="LoadingBarText" HorizontalAlignment="Center" Margin="0 0 0 10" Foreground="White">Loading...</TextBlock>
+                </Grid>
+            </Border>
+            
+            <!-- Status bar-->
+            <StatusBar Height="23" Margin="0 23 0 0" DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Background="#0679C5">
+                <!--Kinect status-->
+                <StatusBarItem>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Background="#0679C5" Foreground="White">Kinect status:</TextBlock>
+                        <TextBlock Background="#0679C5" Foreground="White" Margin="5,0,0,0" Name="KinectStatus"/>
+                    </StackPanel>
+                </StatusBarItem>
+
+                <!--x and y coordinates of the mouse-->
+                <StatusBarItem  HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Background="#0679C5" Foreground="White">X:</TextBlock>
+                        <TextBlock Background="#0679C5" Foreground="White" Margin="5,0,0,0" Name="XPosition"/>
+                        <TextBlock Background="#0679C5" Foreground="White">, Y:</TextBlock>
+                        <TextBlock Background="#0679C5" Foreground="White" Margin="5,0,0,0" Name="YPosition"/>
+                    </StackPanel>
+                </StatusBarItem>
+            </StatusBar>
+        </Grid>
+    </k:KinectRegion>
+</Controls:MetroWindow>

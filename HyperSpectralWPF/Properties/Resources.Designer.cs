@@ -8,10 +8,10 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace HyperSpectralWPF.Properties
-{
-
-
+namespace HyperSpectralWPF.Properties {
+    using System;
+    
+    
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -22,49 +22,66 @@ namespace HyperSpectralWPF.Properties
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources
-    {
-
+    internal class Resources {
+        
         private static global::System.Resources.ResourceManager resourceMan;
-
+        
         private static global::System.Globalization.CultureInfo resourceCulture;
-
+        
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal Resources()
-        {
+        internal Resources() {
         }
-
+        
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager
-        {
-            get
-            {
-                if ((resourceMan == null))
-                {
+        internal static global::System.Resources.ResourceManager ResourceManager {
+            get {
+                if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("HyperSpectralWPF.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
-
+        
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture
-        {
-            get
-            {
+        internal static global::System.Globalization.CultureInfo Culture {
+            get {
                 return resourceCulture;
             }
-            set
-            {
+            set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;grammar version=&quot;1.0&quot; xml:lang=&quot;en-US&quot; root=&quot;rootRule&quot; tag-format=&quot;semantics/1.0-literals&quot; xmlns=&quot;http://www.w3.org/2001/06/grammar&quot;&gt;
+        ///  &lt;rule id=&quot;rootRule&quot;&gt;
+        ///    &lt;one-of&gt;
+        ///      &lt;item&gt;
+        ///        &lt;tag&gt;FORWARD&lt;/tag&gt;
+        ///        &lt;one-of&gt;
+        ///          &lt;item&gt; forwards &lt;/item&gt;
+        ///          &lt;item&gt; forward &lt;/item&gt;
+        ///          &lt;item&gt; straight &lt;/item&gt;
+        ///        &lt;/one-of&gt;
+        ///      &lt;/item&gt;
+        ///      &lt;item&gt;
+        ///        &lt;tag&gt;BACKWARD&lt;/tag&gt;
+        ///        &lt;one-of&gt;
+        ///          &lt;item&gt; backward &lt;/item&gt;
+        ///          &lt;item&gt; backwards &lt;/item&gt;
+        ///         [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string SpeechGrammar {
+            get {
+                return ResourceManager.GetString("SpeechGrammar", resourceCulture);
             }
         }
     }
