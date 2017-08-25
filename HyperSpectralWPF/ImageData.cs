@@ -52,28 +52,71 @@ namespace HyperSpectralWPF
             myCursor = new HDFqlCursor();
             HDFql.CursorUse(myCursor);
 
+            string path = "";
+
+            HDFql.Execute("SHOW DATASET LIKE {50e35494-f4dd-4122-96f8-4d47c927abe5}/resultarray/inputdata WHERE DATATYPE IS INT");
+            if (HDFql.CursorNext() == HDFql.Success)
+            {
+                path = HDFql.CursorGetChar();
+            }
+            else
+            {
+                HDFql.Execute("SHOW DATASET LIKE inputdata WHERE DATATYPE IS INT");
+
+                if (HDFql.CursorNext() == HDFql.Success)
+                {
+                    path = HDFql.CursorGetChar();
+                }
+                else
+                {
+                    HDFql.Execute("SHOW DATASET LIKE Cube/resultarray/inputdata WHERE DATATYPE IS INT");
+
+                    if (HDFql.CursorNext() == HDFql.Success)
+                    {
+                        path = HDFql.CursorGetChar();
+                    }
+                }
+            }
+
             // Populate cursor "myCursor" with size of dataset "example_dataset" and display it
-            HDFql.Execute("USE GROUP {50e35494-f4dd-4122-96f8-4d47c927abe5}");
-            HDFql.Execute("USE GROUP resultarray");
-            HDFql.Execute("USE DATASET inputdata");
+            if (path == "{50e35494-f4dd-4122-96f8-4d47c927abe5}/resultarray/inputdata")
+            {
+                HDFql.Execute("USE GROUP {50e35494-f4dd-4122-96f8-4d47c927abe5}");
+                HDFql.Execute("USE GROUP resultarray");
+                HDFql.Execute("USE DATASET inputdata");
+            }
+            else if (path == "inputdata")
+            {
+                HDFql.Execute("USE DATASET inputdata");
+            }
+            else
+            {
+                HDFql.Execute("USE GROUP Cube");
+                HDFql.Execute("USE GROUP resultarray");
+                HDFql.Execute("USE DATASET inputdata");
+            }
 
             HDFql.Execute("SHOW SIZE inputdata");
+            HDFql.CursorFirst();
+            Console.WriteLine("Dataset size: {0}", HDFql.CursorGetInt());
 
             HDFql.Execute("SHOW DIMENSION inputdata");
+            HDFql.CursorFirst();
+            Console.WriteLine("Dataset size: {0}", HDFql.CursorGetInt());
 
             // Console.WriteLine lambda count, should be 78
             HDFql.CursorFirst(null);
-            lambdaCount = (int)HDFql.CursorGetInt(null);
-            Console.WriteLine("inputdata dimensions 0: " + lambdaCount);
+            lambdaCount = HDFql.CursorGetInt() != null ? (int)HDFql.CursorGetInt() : 0;
+            Console.WriteLine("inputdata dimension 0 (Λ): " + lambdaCount);
 
             // Console.WriteLine the the x and y dimensions of the dataset
             HDFql.CursorAbsolute(null, 2);
-            int xDimension = (int)HDFql.CursorGetInt(null);
-            Console.WriteLine("inputdata dimensions 2 (X): " + xDimension);
+            int xDimension = HDFql.CursorGetInt() != null ? (int)HDFql.CursorGetInt() : 0;
+            Console.WriteLine("inputdata dimension 2 (X): " + xDimension);
 
             HDFql.CursorAbsolute(null, 3);
-            int yDimension = (int)(HDFql.CursorGetInt(null));
-            Console.WriteLine("inputdata dimensions 3 (Y): " + yDimension);
+            int yDimension = HDFql.CursorGetInt() != null ? (int)HDFql.CursorGetInt() : 0;
+            Console.WriteLine("inputdata dimension 3 (Y): " + yDimension);
 
             // Set the size of the data array to be lambdaCount * xDimension * yDimension
             data = new float[lambdaCount, xDimension, yDimension];
@@ -81,15 +124,15 @@ namespace HyperSpectralWPF
             // Register variable "data" for subsequent use (by HDFql)
             HDFql.VariableRegister(data);
 
-            // Select (i.e. read) dataset into variable "data"
+            // Select (y.e. read) dataset into variable "data"
             HDFql.Execute("SELECT FROM inputdata INTO MEMORY " + HDFql.VariableGetNumber(data));
             
             // Unregister variable "data" as it is no longer used/needed (by HDFql)
             HDFql.VariableUnregister(data);
 
             // Set the length and width of the textures
-            imageWidth = xDimension;
-            imageHeight = yDimension;
+            imageWidth  = yDimension;
+            imageHeight = xDimension;
 
             FindMinAndMaxValue();
         }
@@ -102,18 +145,18 @@ namespace HyperSpectralWPF
             // Retrieve the maximum value
             for (int lambda = 0; lambda < lambdaCount; lambda++)
             {
-                for (int i = 0; i < imageHeight; i++)
+                for (int y = 0; y < imageHeight; y++)
                 {
-                    for (int j = 0; j < imageWidth; j++)
+                    for (int x = 0; x < imageWidth; x++)
                     {
-                        if (data[lambda, j, i] > maxValue)
+                        if (data[lambda, y, x] > maxValue)
                         {
-                            maxValue = data[lambda, j, i];
+                            maxValue = data[lambda, y, x];
                         }
 
-                        if (data[lambda, j, i] < minValue)
+                        if (data[lambda, y, x] < minValue)
                         {
-                            minValue = data[lambda, j, i];
+                            minValue = data[lambda, y, x];
                         }
                     }
                 }

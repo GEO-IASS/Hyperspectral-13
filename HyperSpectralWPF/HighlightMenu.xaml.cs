@@ -67,7 +67,7 @@ namespace HyperSpectralWPF
         /// <param name="e"></param>
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (float.Parse(ThresholdBox.Text) <= 255)
+            if (ThresholdBox.Text != "" && float.Parse(ThresholdBox.Text) <= 255)
             {
                 DialogResult = true;
                 this.Close();

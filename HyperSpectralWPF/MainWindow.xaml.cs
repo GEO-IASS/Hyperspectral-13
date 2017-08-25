@@ -28,9 +28,9 @@ namespace HyperSpectralWPF
         {
             public int x;
             public int y;
-            public float value;
+            public double value;
 
-            public Pixel(int x, int y, float value)
+            public Pixel(int x, int y, double value)
             {
                 this.x = x;
                 this.y = y;
@@ -113,7 +113,7 @@ namespace HyperSpectralWPF
 
             imageManager = new ImageManager(this);
             storyBoard = FindResource("BorderAnimation") as Storyboard;
-            Storyboard.SetTarget(storyBoard, selectionBox);
+            Storyboard.SetTarget(storyBoard, SelectionBox);
 
             // Create the kinect region for the user view
             KinectRegion.SetKinectRegion(this, kinectRegion);
@@ -191,17 +191,17 @@ namespace HyperSpectralWPF
                 coordAtMouseDown = new Point(float.Parse(XPosition.Text), float.Parse(YPosition.Text));
 
                 // Initial placement of the drag selection box.         
-                Canvas.SetLeft(selectionBox, mouseDownPosition.X);
-                Canvas.SetTop(selectionBox, mouseDownPosition.Y);
-                selectionBox.Width = 0;
-                selectionBox.Height = 0;
+                Canvas.SetLeft(SelectionBox, mouseDownPosition.X);
+                Canvas.SetTop(SelectionBox, mouseDownPosition.Y);
+                SelectionBox.Width = 0;
+                SelectionBox.Height = 0;
 
                 // Make the drag selection box visible.
-                selectionBox.Visibility = Visibility.Visible;
+                SelectionBox.Visibility = Visibility.Visible;
 
                 // If the dash border for the selection box is not already animated,
                 // animate it.
-                if (!(DependencyPropertyHelper.GetValueSource(selectionBox, Rectangle.StrokeDashOffsetProperty).IsAnimated))
+                if (!(DependencyPropertyHelper.GetValueSource(SelectionBox, Rectangle.StrokeDashOffsetProperty).IsAnimated))
                 {
                     storyBoard.Begin();
                 }
@@ -306,46 +306,46 @@ namespace HyperSpectralWPF
                 
                 if (mouseDownPosition.X < mousePosition.X)
                 {
-                    Canvas.SetLeft(selectionBox, mouseDownPosition.X);
-                    selectionBox.Width = mousePosition.X - mouseDownPosition.X;
+                    Canvas.SetLeft(SelectionBox, mouseDownPosition.X);
+                    SelectionBox.Width = mousePosition.X - mouseDownPosition.X;
                 }
                 else
                 {
-                    Canvas.SetLeft(selectionBox, mousePosition.X);
-                    selectionBox.Width = mouseDownPosition.X - mousePosition.X;
+                    Canvas.SetLeft(SelectionBox, mousePosition.X);
+                    SelectionBox.Width = mouseDownPosition.X - mousePosition.X;
                 }
 
                 if (mouseDownPosition.Y < mousePosition.Y)
                 {
-                    Canvas.SetTop(selectionBox, mouseDownPosition.Y);
-                    selectionBox.Height = mousePosition.Y - mouseDownPosition.Y;
+                    Canvas.SetTop(SelectionBox, mouseDownPosition.Y);
+                    SelectionBox.Height = mousePosition.Y - mouseDownPosition.Y;
                 }
                 else
                 {
-                    Canvas.SetTop(selectionBox, mousePosition.Y);
-                    selectionBox.Height = mouseDownPosition.Y - mousePosition.Y;
+                    Canvas.SetTop(SelectionBox, mousePosition.Y);
+                    SelectionBox.Height = mouseDownPosition.Y - mousePosition.Y;
                 }
 
                 if (mousePosition.X > ImageViewer.Position().X + ImageViewer.Position().Width)
                 {
-                    selectionBox.Width = ImageViewer.Position().X + ImageViewer.Position().Width - mouseDownPosition.X;
+                    SelectionBox.Width = ImageViewer.Position().X + ImageViewer.Position().Width - mouseDownPosition.X;
                 }
 
                 if (mousePosition.Y > ImageViewer.Position().Y + ImageViewer.Position().Height - 30)
                 {
-                    selectionBox.Height = ImageViewer.Position().Y + ImageViewer.Position().Height - mouseDownPosition.Y - 30;
+                    SelectionBox.Height = ImageViewer.Position().Y + ImageViewer.Position().Height - mouseDownPosition.Y - 30;
                 }
 
                 if (mousePosition.X < ImageViewer.Position().X)
                 {
-                    Canvas.SetLeft(selectionBox, ImageViewer.Position().X);
-                    selectionBox.Width = mouseDownPosition.X - ImageViewer.Position().X;
+                    Canvas.SetLeft(SelectionBox, ImageViewer.Position().X);
+                    SelectionBox.Width = mouseDownPosition.X - ImageViewer.Position().X;
                 }
 
                 if (mousePosition.Y < ImageViewer.Position().Y - 30)
                 {
-                    Canvas.SetTop(selectionBox, ImageViewer.Position().Y - 30);
-                    selectionBox.Height = mouseDownPosition.Y - (ImageViewer.Position().Y - 30);
+                    Canvas.SetTop(SelectionBox, ImageViewer.Position().Y - 30);
+                    SelectionBox.Height = mouseDownPosition.Y - (ImageViewer.Position().Y - 30);
                 }
             }
         }
@@ -440,6 +440,24 @@ namespace HyperSpectralWPF
             // Show the open file dialog and retrieve the file url
             if (openFileDialog.ShowDialog() == true)
             {
+                // Disable the toolbar and file menu buttons
+                SelectModeSwitch.IsEnabled     = false;
+                SelectAreaModeSwitch.IsEnabled = false;
+                GestureModeSwitch.IsEnabled    = false;
+                VoiceModeSwitch.IsEnabled      = false;
+                SaveImageAsBtn.IsEnabled       = false;
+                OpenButton.IsEnabled           = false;
+                FileMenuOpenButton.IsEnabled   = false;
+                FileMenuSaveButton.IsEnabled   = false;
+                BlurButton.IsEnabled           = false;
+                GraphButton.IsEnabled          = false;
+                HighlightButton.IsEnabled      = false;
+
+                // Uncheck all toolbar switches
+                GestureModeSwitch.IsChecked = false;
+                VoiceModeSwitch.IsChecked   = false;
+
+                // Process the images for the file url that was chosen
                 imageManager.ProcessImages(openFileDialog.FileName);
             }
         }
@@ -598,7 +616,7 @@ namespace HyperSpectralWPF
                 Graph graph = new Graph(pixelValues, selectedPixel.x, selectedPixel.y, imageManager.GetWavelength());
                 graph.Show();
             }
-            else if (topLeft != null && bottomRight != null && selectionBox.Visibility != Visibility.Collapsed)
+            else if (topLeft != null && bottomRight != null && SelectionBox.Visibility != Visibility.Collapsed)
             {
                 float[,,] data = imageManager.GetImageData().GetData();
                 float[] pixelValues = new float[imageManager.GetImageData().GetLambdaCount()];
@@ -716,6 +734,41 @@ namespace HyperSpectralWPF
         public ImageManager GetImageManager()
         {
             return this.imageManager;
+        }
+
+        /// <summary>
+        /// Deselects the selection box if the selection box
+        /// is clicked.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SelectionBox_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (selectAreaMode)
+            {
+                // Capture and track the mouse.
+                mouseDown = true;
+                mouseDownPosition = e.GetPosition(MyCanvas);
+                ImageViewer.CaptureMouse();
+
+                coordAtMouseDown = new Point(float.Parse(XPosition.Text), float.Parse(YPosition.Text));
+
+                // Initial placement of the drag selection box.         
+                Canvas.SetLeft(SelectionBox, mouseDownPosition.X);
+                Canvas.SetTop(SelectionBox, mouseDownPosition.Y);
+                SelectionBox.Width = 0;
+                SelectionBox.Height = 0;
+
+                // Make the drag selection box visible.
+                SelectionBox.Visibility = Visibility.Visible;
+
+                // If the dash border for the selection box is not already animated,
+                // animate it.
+                if (!(DependencyPropertyHelper.GetValueSource(SelectionBox, Rectangle.StrokeDashOffsetProperty).IsAnimated))
+                {
+                    storyBoard.Begin();
+                }
+            }
         }
     }
 }

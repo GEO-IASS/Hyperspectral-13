@@ -153,16 +153,17 @@ namespace HyperSpectralWPF
         private void BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             // Image data variables
-            float[,,] data = imageData.GetData();
-            float max = imageData.GetMaximum();
-            float min = imageData.GetMinimum();
+            float[,,] data  = imageData.GetData();
+            double max      = imageData.GetMaximum();
+            double min      = imageData.GetMinimum();
             int lambdaCount = imageData.GetLambdaCount();
-            int width = imageData.GetWidth();
-            int height = imageData.GetHeight();
+            int width       = imageData.GetWidth();
+            int height      = imageData.GetHeight();
 
             // Initialize the writeable bitmaps
             WriteableBitmap[] bitmaps = new WriteableBitmap[lambdaCount];
 
+            // Go through each image in the image data
             for (int lambda = 0; lambda < lambdaCount; lambda++)
             {
                 // Instantiate a new writeable bitmap to store this image's pixel data.
@@ -171,12 +172,12 @@ namespace HyperSpectralWPF
                 // Reserve the back buffer for updates.
                 bitmaps[lambda].Lock();
 
-                // Go through each pixel in each image
+                // Iterate through the pixels along the x & y axis in the currently loaded image
                 for (int y = 0; y < height; y++)
                 {
                     for (int x = 0; x < width; x++)
                     {
-                        float n = data[lambda, x, y];
+                        double n = data[lambda, y, x];
                         byte pixelValue = (byte)(((n - min) / (max - min)) * MAXIMUM_INTENSITY);
                         unsafe
                         {
@@ -184,13 +185,13 @@ namespace HyperSpectralWPF
                             int pBackBuffer = (int)bitmaps[lambda].BackBuffer;
 
                             // Find the address of the pixel to draw.
-                            pBackBuffer += x * bitmaps[lambda].BackBufferStride;
-                            pBackBuffer += y * 4;
+                            pBackBuffer += y * bitmaps[lambda].BackBufferStride;
+                            pBackBuffer += x * 4;
 
                             // Compute the pixel's color.
                             int color_data = pixelValue << 16; // R
-                            color_data |= pixelValue << 8;  // G
-                            color_data |= pixelValue << 0;  // B
+                            color_data    |= pixelValue << 8;  // G
+                            color_data    |= pixelValue << 0;  // B
 
                             // Assign the color data to the pixel.
                             *((int*)pBackBuffer) = color_data;
@@ -244,39 +245,45 @@ namespace HyperSpectralWPF
             mainWindow.MainContent.Visibility = Visibility.Visible;
 
             // Display the file and image information
-            mainWindow.FileTextBlock.Text = "Filename: " + imageData.GetFileName();
-            mainWindow.WidthTextBlock.Text = "Width: " + imageData.GetWidth();
-            mainWindow.HeightTextBlock.Text = "Height: " + imageData.GetHeight();
+            mainWindow.FileTextBlock.Text   = "Filename: " + imageData.GetFileName();
+            mainWindow.WidthTextBlock.Text  = "Width: "    + imageData.GetWidth();
+            mainWindow.HeightTextBlock.Text = "Height: "   + imageData.GetHeight();
 
             // Set the image index to the first image and calculate the current
             // wavelength being displayed.
             imageIndex = 0;
             wavelength = LOWEST_WAVELENGTH + (imageIndex * WAVELENGTH_INCREMENT);
 
-            mainWindow.LambdaTextBlock.Text = wavelength.ToString();
+            mainWindow.LambdaTextBlock.Text     = wavelength.ToString();
             mainWindow.IndexValueTextBlock.Text = (imageIndex + 1).ToString();
 
             float viewerScale = 500.0f / (imageData.GetHeight() * 1.0f);
 
-            mainWindow.ImageViewer.Source = bitmaps[imageIndex];
-            mainWindow.ImageViewer.Width = (imageData.GetWidth() * 1.0f) * viewerScale;
-            mainWindow.ImageViewer.Height = (imageData.GetHeight() * 1.0f) * viewerScale;
+            // Set the current visible image
+            mainWindow.ImageViewer.Source              = bitmaps[imageIndex];
+            mainWindow.ImageViewer.Width               = (imageData.GetWidth()  * 1.0f) * viewerScale;
+            mainWindow.ImageViewer.Height              = (imageData.GetHeight() * 1.0f) * viewerScale;
             mainWindow.ImageViewer.HorizontalAlignment = HorizontalAlignment.Center;
-            mainWindow.ImageViewer.VerticalAlignment = VerticalAlignment.Center;
+            mainWindow.ImageViewer.VerticalAlignment   = VerticalAlignment.Center;
 
             ImageIsDisplayed = true;
 
-            mainWindow.SelectModeSwitch.IsEnabled = true;
+            // Enable the toolbar and file menu buttons
+            mainWindow.SelectModeSwitch.IsEnabled     = true;
             mainWindow.SelectAreaModeSwitch.IsEnabled = true;
-            mainWindow.GestureModeSwitch.IsEnabled = true;
-            mainWindow.VoiceModeSwitch.IsEnabled = true;
-            mainWindow.SaveImageAsBtn.IsEnabled = true;
-            mainWindow.BlurButton.IsEnabled = true;
-            mainWindow.GraphButton.IsEnabled = true;
-            mainWindow.HighlightButton.IsEnabled = true;
+            mainWindow.GestureModeSwitch.IsEnabled    = true;
+            mainWindow.VoiceModeSwitch.IsEnabled      = true;
+            mainWindow.SaveImageAsBtn.IsEnabled       = true;
+            mainWindow.OpenButton.IsEnabled           = true;
+            mainWindow.FileMenuOpenButton.IsEnabled   = true;
+            mainWindow.FileMenuSaveButton.IsEnabled   = true;
+            mainWindow.BlurButton.IsEnabled           = true;
+            mainWindow.GraphButton.IsEnabled          = true;
+            mainWindow.HighlightButton.IsEnabled      = true;
 
+            // Check the gesture and voice switches
             mainWindow.GestureModeSwitch.IsChecked = true;
-            mainWindow.VoiceModeSwitch.IsChecked = true;
+            mainWindow.VoiceModeSwitch.IsChecked   = true;
         }
         
         /// <summary>
@@ -285,15 +292,18 @@ namespace HyperSpectralWPF
         /// </summary>
         public void FreezeCurrentImage()
         {
-            mainWindow.FrozenImage1.Source = mainWindow.ImageViewer.Source;
             mainWindow.FrozenArea.Width    = mainWindow.ImageViewer.Width;
             mainWindow.FrozenArea.Height   = mainWindow.ImageViewer.Height;
+
+            mainWindow.FrozenImage1.Source = mainWindow.ImageViewer.Source;
             mainWindow.FrozenImage1.Width  = mainWindow.ImageViewer.Width;
             mainWindow.FrozenImage1.Height = mainWindow.ImageViewer.Height;
-            mainWindow.FrozenImage1.VerticalAlignment = VerticalAlignment.Center;
+
+            mainWindow.FrozenImage1.VerticalAlignment   = VerticalAlignment.Center;
             mainWindow.FrozenImage1.HorizontalAlignment = HorizontalAlignment.Center;
+
             mainWindow.FrozenImage1.Visibility = Visibility.Visible;
-            mainWindow.FrozenArea.Visibility = Visibility.Visible;
+            mainWindow.FrozenArea.Visibility   = Visibility.Visible;
         }
 
         /// <summary>
@@ -306,8 +316,10 @@ namespace HyperSpectralWPF
                 if (imageIndex > 0)
                 {
                     imageIndex = imageIndex - 1;
+
                     mainWindow.ImageViewer.Source = bitmaps[imageIndex];
                     mainWindow.ImageSlider.Value = imageIndex;
+
                     wavelength = LOWEST_WAVELENGTH + (imageIndex * WAVELENGTH_INCREMENT);
                     mainWindow.LambdaTextBlock.Text = wavelength.ToString();
                     mainWindow.IndexValueTextBlock.Text = (imageIndex + 1).ToString();
@@ -325,8 +337,10 @@ namespace HyperSpectralWPF
                 if (imageIndex < bitmaps.Length - 1)
                 {
                     imageIndex = imageIndex + 1;
+
                     mainWindow.ImageViewer.Source = bitmaps[imageIndex];
                     mainWindow.ImageSlider.Value = imageIndex;
+
                     wavelength = LOWEST_WAVELENGTH + (imageIndex * WAVELENGTH_INCREMENT);
                     mainWindow.LambdaTextBlock.Text = wavelength.ToString();
                     mainWindow.IndexValueTextBlock.Text = (imageIndex + 1).ToString();
@@ -347,8 +361,10 @@ namespace HyperSpectralWPF
                     if (bitmaps != null && bitmaps.Length > 0)
                     {
                         imageIndex = index - 1;
+
                         mainWindow.ImageViewer.Source = bitmaps[imageIndex];
                         mainWindow.ImageSlider.Value = imageIndex;
+
                         wavelength = LOWEST_WAVELENGTH + (imageIndex * WAVELENGTH_INCREMENT);
                         mainWindow.LambdaTextBlock.Text = wavelength.ToString();
                         mainWindow.IndexValueTextBlock.Text = (imageIndex + 1).ToString();
@@ -363,11 +379,11 @@ namespace HyperSpectralWPF
         /// <param name="blur"></param>
         public void ApplyBlur(float[,] blur)
         {
-            float max = imageData.GetMaximum();
-            float min = imageData.GetMinimum();
-            int width = imageData.GetWidth();
-            int height = imageData.GetHeight();
             float[,] data = blur;
+            double max     = imageData.GetMaximum();
+            double min     = imageData.GetMinimum();
+            int width      = imageData.GetWidth();
+            int height     = imageData.GetHeight();
 
             WriteableBitmap mosaic = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
             mosaic.Lock();
@@ -377,7 +393,7 @@ namespace HyperSpectralWPF
             {
                 for (int x = 0; x < mosaic.Width; x++)
                 {
-                    float n = data[x, y];
+                    double n = data[y, x];
                     byte pixelValue = (byte)(((n - min) / (max - min)) * MAXIMUM_INTENSITY);
                     unsafe
                     {
@@ -385,8 +401,8 @@ namespace HyperSpectralWPF
                         int pBackBuffer = (int)mosaic.BackBuffer;
 
                         // Find the address of the pixel to draw.
-                        pBackBuffer += x * mosaic.BackBufferStride;
-                        pBackBuffer += y * 4;
+                        pBackBuffer += y * mosaic.BackBufferStride;
+                        pBackBuffer += x * 4;
 
                         // Compute the pixel's color.
                         int color_data = pixelValue << 16; // R
@@ -415,12 +431,12 @@ namespace HyperSpectralWPF
         public float[,] MosaicBlur()
         {
             int lambdaCount = imageData.GetLambdaCount();
-            int width = imageData.GetWidth();
-            int height = imageData.GetHeight();
+            int width       = imageData.GetWidth();
+            int height      = imageData.GetHeight();
             int pixelLength = 10;
 
             float[,,] oldPixelData = imageData.GetData();
-            float[,] newPixelData = new float[width, height];
+            float[,]  newPixelData = new float[height, width];
 
             for (int y = 0; y < height; y += pixelLength)
             {
@@ -433,7 +449,7 @@ namespace HyperSpectralWPF
                         {
                             if (xx < width && yy < height)
                             {
-                                sum += oldPixelData[imageIndex, xx, yy];
+                                sum += oldPixelData[imageIndex, yy, xx];
                             }
                         }
                     }
@@ -445,7 +461,7 @@ namespace HyperSpectralWPF
                         {
                             if (xx < width && yy < height)
                             {
-                                newPixelData[xx, yy] = avg;
+                                newPixelData[yy, xx] = avg;
                             }
                         }
                     }
@@ -462,8 +478,8 @@ namespace HyperSpectralWPF
         public float[,] BoxBlur()
         {
             int lambdaCount = imageData.GetLambdaCount();
-            int width = imageData.GetWidth();
-            int height = imageData.GetHeight();
+            int width       = imageData.GetWidth();
+            int height      = imageData.GetHeight();
             int pixelLength = 10;
 
             float[,,] oldPixelData = imageData.GetData();
@@ -499,12 +515,12 @@ namespace HyperSpectralWPF
         /// <param name="value"></param>
         public void HighlightThreshold(int threshold, HighlightCondition highlightCondition = HighlightCondition.ABOVE)
         {
-            float max = imageData.GetMaximum();
-            float min = imageData.GetMinimum();
-            int width = imageData.GetWidth();
-            int height = imageData.GetHeight();
-            float[,,] data = imageData.GetData();
             this.highlightCondition = highlightCondition;
+            double max              = imageData.GetMaximum();
+            double min              = imageData.GetMinimum();
+            int width               = imageData.GetWidth();
+            int height              = imageData.GetHeight();
+            float[,,] data         = imageData.GetData();
 
             WriteableBitmap highlightedImage = new WriteableBitmap(width, height, 96, 96, PixelFormats.Bgr32, null);
             highlightedImage.Lock();
@@ -514,7 +530,7 @@ namespace HyperSpectralWPF
             {
                 for (int x = 0; x < width; x++)
                 {
-                    float n = data[imageIndex, x, y];
+                    double n = data[imageIndex, y, x];
                     byte pixelValue = (byte)(((n - min) / (max - min)) * MAXIMUM_INTENSITY);
                     unsafe
                     {
@@ -522,8 +538,8 @@ namespace HyperSpectralWPF
                         int pBackBuffer = (int)highlightedImage.BackBuffer;
 
                         // Find the address of the pixel to draw.
-                        pBackBuffer += x * highlightedImage.BackBufferStride;
-                        pBackBuffer += y * 4;
+                        pBackBuffer += y * highlightedImage.BackBufferStride;
+                        pBackBuffer += x * 4;
 
                         // Compute the pixel's color.
                         int color_data;
@@ -532,14 +548,14 @@ namespace HyperSpectralWPF
                             if (n > threshold)
                             {
                                 color_data = pixelValue << 16; // R
-                                color_data |= 0;                // G
-                                color_data |= 0;                // B
+                                color_data |= 0;               // G
+                                color_data |= 0;               // B
                             }
                             else
                             {
                                 color_data = pixelValue << 16; // R
-                                color_data |= pixelValue << 8;  // G
-                                color_data |= pixelValue << 0;  // B
+                                color_data |= pixelValue << 8; // G
+                                color_data |= pixelValue << 0; // B
                             }
                         }
                         else
@@ -547,14 +563,14 @@ namespace HyperSpectralWPF
                             if (n < threshold)
                             {
                                 color_data = pixelValue << 16; // R
-                                color_data |= 0;                // G
-                                color_data |= 0;                // B
+                                color_data |= 0;               // G
+                                color_data |= 0;               // B
                             }
                             else
                             {
                                 color_data = pixelValue << 16; // R
-                                color_data |= pixelValue << 8;  // G
-                                color_data |= pixelValue << 0;  // B
+                                color_data |= pixelValue << 8; // G
+                                color_data |= pixelValue << 0; // B
                             }
                         }
 
